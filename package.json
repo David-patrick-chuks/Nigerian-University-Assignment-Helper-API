@@ -1,0 +1,48 @@
+{
+  "name": "nigerian-university-assignment-helper",
+  "version": "1.0.0",
+  "description": "AI-powered assignment help backend for Nigerian university students",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "test": "jest"
+  },
+  "keywords": [
+    "assignment",
+    "ai",
+    "gemini",
+    "nigerian-university",
+    "express"
+  ],
+  "author": "David Patrick",
+  "license": "MIT",
+  "dependencies": {
+    "@google/genai": "^1.7.0",
+    "cors": "^2.8.5",
+    "docx": "^8.5.0",
+    "dotenv": "^16.6.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.5.1",
+    "express-validator": "^7.0.1",
+    "fs-extra": "^11.2.0",
+    "helmet": "^7.1.0",
+    "multer": "^1.4.5-lts.1",
+    "pdfkit": "^0.14.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.14",
+    "@types/multer": "^1.4.11",
+    "@types/node": "^20.10.0",
+    "@types/pdfkit": "^0.13.3",
+    "@types/supertest": "^6.0.3",
+    "jest": "^29.7.0",
+    "supertest": "^7.1.1",
+    "ts-jest": "^29.4.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.2"
+  }
+}
