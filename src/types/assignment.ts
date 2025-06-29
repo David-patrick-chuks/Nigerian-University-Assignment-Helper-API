@@ -6,6 +6,7 @@ export interface AssignmentRequest {
   courseTitle: string;
   lecturerInCharge: string;
   numberOfPages: number;
+  wordCount?: number; 
   question: string;
   fileType: 'doc' | 'docx' | 'pdf' | 'txt';
 }

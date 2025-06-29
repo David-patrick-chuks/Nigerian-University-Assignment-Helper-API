@@ -1,137 +1,177 @@
-import { AlignmentType, Document, Packer, Paragraph, TextRun } from 'docx';
-import PDFDocument from 'pdfkit';
+import { AlignmentType, Document, Footer, Packer, PageNumber, Paragraph, TextRun } from 'docx';
 import { DocumentFormat } from '../types/assignment';
 
 export class DocumentGenerator {
 
-
+  // Clean content by removing references and bibliography sections
+  private cleanContent(text: string): string {
+    // Remove references section and everything after it
+    const referencesPatterns = [
+      /References?\s*\n.*/is,
+      /Bibliography\s*\n.*/is,
+      /Works Cited\s*\n.*/is,
+      /Sources\s*\n.*/is,
+      /Citations?\s*\n.*/is
+    ];
+    
+    let cleanedText = text;
+    for (const pattern of referencesPatterns) {
+      cleanedText = cleanedText.replace(pattern, '');
+    }
+    
+    // Remove any remaining reference-like content at the end
+    cleanedText = cleanedText.replace(/\n\s*[A-Z][a-z\s]+\s*\([^)]+\)\.\s*.*$/gm, '');
+    
+    return cleanedText.trim();
+  }
 
   async generateDocument(format: DocumentFormat, fileType: string): Promise<{ buffer: Buffer; fileName: string; mimeType: string }> {
+    // Clean the content to remove references
+    const cleanedFormat = {
+      ...format,
+      content: this.cleanContent(format.content)
+    };
+    
     switch (fileType.toLowerCase()) {
       case 'docx':
-        return this.generateDocx(format);
+        return this.generateDocx(cleanedFormat);
       case 'pdf':
-        return this.generatePdf(format);
+        return this.generatePdf(cleanedFormat);
       case 'txt':
-        return this.generateTxt(format);
+        return this.generateTxt(cleanedFormat);
       case 'doc':
         // For .doc files, we'll generate .docx as it's more modern and compatible
-        return this.generateDocx(format);
+        return this.generateDocx(cleanedFormat);
       default:
         throw new Error(`Unsupported file type: ${fileType}`);
     }
   }
 
   private async generateDocx(format: DocumentFormat): Promise<{ buffer: Buffer; fileName: string; mimeType: string }> {
-    const doc = new Document({
-      sections: [{
-        properties: {
-          page: {
-            margin: {
-              top: 1440, // 1 inch
-              right: 1440,
-              bottom: 1440,
-              left: 1440
+    try {
+      const doc = new Document({
+        sections: [{
+          properties: {
+            page: {
+              margin: {
+                top: 1440, // 1 inch
+                right: 1440,
+                bottom: 1440,
+                left: 1440
+              }
             }
-          }
-        },
-        children: [
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Name: ${format.studentInfo.name}`,
-                bold: true,
-                size: 24
-              })
-            ],
-            alignment: AlignmentType.LEFT
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Matric Number: ${format.studentInfo.matric}`,
-                bold: true,
-                size: 24
-              })
-            ],
-            alignment: AlignmentType.LEFT
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Department: ${format.studentInfo.department}`,
-                bold: true,
-                size: 24
-              })
-            ],
-            alignment: AlignmentType.LEFT
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Course Code: ${format.studentInfo.courseCode}`,
-                bold: true,
-                size: 24
-              })
-            ],
-            alignment: AlignmentType.LEFT
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Course Title: ${format.studentInfo.courseTitle}`,
-                bold: true,
-                size: 24
-              })
-            ],
-            alignment: AlignmentType.LEFT
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Lecturer-in-Charge: ${format.studentInfo.lecturerInCharge}`,
-                bold: true,
-                size: 24
-              })
-            ],
-            alignment: AlignmentType.LEFT
-          }),
-          new Paragraph({
-            children: [new TextRun({ text: '' })],
-            spacing: { before: 400, after: 400 }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: format.question,
-                bold: true,
-                size: 32,
-                color: '000000'
-              })
-            ],
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 400, after: 600 }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: format.content,
-                size: 24
-              })
-            ],
-            alignment: AlignmentType.LEFT,
-            spacing: { line: 360 }
-          })
-        ]
-      }]
-    });
-    const buffer = await Packer.toBuffer(doc);
-    const fileName = `assignment_${format.studentInfo.matric.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
-    return {
-      buffer,
-      fileName,
-      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    };
+          },
+          headers: {},
+          footers: {
+            default: new Footer({
+              children: [
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: "Page ",
+                      size: 20
+                    }),
+                    new TextRun({
+                      children: [PageNumber.CURRENT],
+                      size: 20
+                    }),
+                    new TextRun({
+                      text: " of ",
+                      size: 20
+                    }),
+                    new TextRun({
+                      children: [PageNumber.TOTAL_PAGES],
+                      size: 20
+                    })
+                  ],
+                  alignment: AlignmentType.CENTER
+                })
+              ]
+            })
+          },
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({ text: 'Name: ', bold: true, size: 24 }),
+                new TextRun({ text: format.studentInfo.name, size: 24 })
+              ],
+              alignment: AlignmentType.LEFT
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: 'Matric Number: ', bold: true, size: 24 }),
+                new TextRun({ text: format.studentInfo.matric, size: 24 })
+              ],
+              alignment: AlignmentType.LEFT
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: 'Department: ', bold: true, size: 24 }),
+                new TextRun({ text: format.studentInfo.department, size: 24 })
+              ],
+              alignment: AlignmentType.LEFT
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: 'Course Code: ', bold: true, size: 24 }),
+                new TextRun({ text: format.studentInfo.courseCode, size: 24 })
+              ],
+              alignment: AlignmentType.LEFT
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: 'Course Title: ', bold: true, size: 24 }),
+                new TextRun({ text: format.studentInfo.courseTitle, size: 24 })
+              ],
+              alignment: AlignmentType.LEFT
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: 'Lecturer-in-Charge: ', bold: true, size: 24 }),
+                new TextRun({ text: format.studentInfo.lecturerInCharge, size: 24 })
+              ],
+              alignment: AlignmentType.LEFT
+            }),
+            new Paragraph({
+              children: [new TextRun({ text: '' })],
+              spacing: { before: 400, after: 400 }
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: format.question,
+                  bold: true,
+                  size: 32,
+                  color: '000000'
+                })
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 400, after: 600 }
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: format.content,
+                  size: 24
+                })
+              ],
+              alignment: AlignmentType.LEFT,
+              spacing: { line: 360 }
+            })
+          ]
+        }]
+      });
+      const buffer = await Packer.toBuffer(doc);
+      const fileName = `assignment_${format.studentInfo.matric.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
+      return {
+        buffer,
+        fileName,
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      };
+    } catch (err) {
+      console.error('Error in generateDocx:', err);
+      throw err;
+    }
   }
 
   // Preprocess AI response to insert double newlines at likely paragraph breaks
@@ -237,23 +277,38 @@ export class DocumentGenerator {
     normalized = normalized.replace(/([^\n])\n(?!\n)/g, '$1 ');
     // Split on double newlines (paragraphs)
     const blocks = normalized.split(/\n{2,}/).map(b => b.trim()).filter(Boolean);
+    // Cap the number of blocks to 200 to prevent runaway parsing
+    const cappedBlocks = blocks.slice(0, 200);
     const result: Array<{ type: 'heading' | 'subheading' | 'subsubheading' | 'bullet' | 'para', text: string, bold?: boolean }> = [];
-    for (let block of blocks) {
-      // Headings
-      if (/^###\s+/.test(block)) {
-        result.push({ type: 'subsubheading', text: block.replace(/^###\s+/, '').trim(), bold: true });
-      } else if (/^##\s+/.test(block)) {
+    
+    for (let block of cappedBlocks) {
+      // Skip empty blocks
+      if (!block.trim()) continue;
+      
+      // Headings - look for ## patterns first
+      if (/^##\s+/.test(block)) {
         result.push({ type: 'subheading', text: block.replace(/^##\s+/, '').trim(), bold: true });
+      } else if (/^###\s+/.test(block)) {
+        result.push({ type: 'subsubheading', text: block.replace(/^###\s+/, '').trim(), bold: true });
       } else if (/^#\s+/.test(block)) {
         result.push({ type: 'heading', text: block.replace(/^#\s+/, '').trim(), bold: true });
       }
-      // Bullets
+      // Bullets - look for * or - patterns
       else if (/^([*-])\s+/.test(block)) {
         result.push({ type: 'bullet', text: block.replace(/^([*-])\s+/, '').trim() });
       }
       // Bold paragraph (e.g., **text**)
       else if (/^\*\*.*\*\*$/.test(block)) {
         result.push({ type: 'para', text: block.replace(/^\*\*|\*\*$/g, '').trim(), bold: true });
+      }
+      // Check if it's a standalone heading (all caps or short title)
+      else if (/^[A-Z][A-Z\s]{2,50}$/.test(block) && block.length < 60) {
+        result.push({ type: 'heading', text: block.trim(), bold: true });
+      }
+      // Check if it's a subheading (ends with colon or is a short descriptive title)
+      else if ((block.endsWith(':') && block.length < 100) || 
+               (/^[A-Z][a-z\s]{3,40}$/.test(block) && block.length < 50)) {
+        result.push({ type: 'subheading', text: block.trim(), bold: true });
       }
       // Paragraph
       else {
@@ -265,83 +320,111 @@ export class DocumentGenerator {
 
   private async generatePdf(format: DocumentFormat): Promise<{ buffer: Buffer; fileName: string; mimeType: string }> {
     return new Promise((resolve, reject) => {
-      const doc = new PDFDocument({
-        size: 'A4',
-        margins: {
-          top: 72,
-          bottom: 72,
-          left: 72,
-          right: 72
+      try {
+        const PDFDocument = require('pdfkit');
+        const doc = new PDFDocument({
+          size: 'A4',
+          margins: {
+            top: 72,
+            bottom: 72,
+            left: 72,
+            right: 72
+          }
+        });
+        const chunks: Buffer[] = [];
+        doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+        doc.on('end', () => {
+          const buffer = Buffer.concat(chunks);
+          const fileName = `assignment_${format.studentInfo.matric.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+          resolve({ buffer, fileName, mimeType: 'application/pdf' });
+        });
+
+        // Add student information
+        doc.fontSize(16).font('Helvetica-Bold').text('STUDENT INFORMATION', { align: 'center' });
+        doc.moveDown(0.5);
+        
+        doc.fontSize(12).font('Helvetica');
+        doc.text(`Name: ${format.studentInfo.name}`);
+        doc.text(`Matric Number: ${format.studentInfo.matric}`);
+        doc.text(`Department: ${format.studentInfo.department}`);
+        doc.text(`Course Code: ${format.studentInfo.courseCode}`);
+        doc.text(`Course Title: ${format.studentInfo.courseTitle}`);
+        doc.text(`Lecturer-in-Charge: ${format.studentInfo.lecturerInCharge}`);
+        
+        doc.moveDown(1);
+        doc.fontSize(14).font('Helvetica-Bold').text('ASSIGNMENT QUESTION', { align: 'center' });
+        doc.moveDown(0.5);
+        doc.fontSize(12).font('Helvetica').text(format.question);
+        
+        doc.moveDown(1);
+        doc.fontSize(14).font('Helvetica-Bold').text('ASSIGNMENT CONTENT', { align: 'center' });
+        doc.moveDown(0.5);
+
+        // Parse and add content
+        try {
+          const blocks = this.parseBasicMarkdown(format.content);
+          blocks.forEach(block => {
+            switch (block.type) {
+              case 'heading':
+                doc.fontSize(16).font('Helvetica-Bold').text(block.text);
+                doc.moveDown(0.5);
+                break;
+              case 'subheading':
+                doc.fontSize(14).font('Helvetica-Bold').text(block.text);
+                doc.moveDown(0.5);
+                break;
+              case 'subsubheading':
+                doc.fontSize(13).font('Helvetica-Bold').text(block.text);
+                doc.moveDown(0.5);
+                break;
+              case 'bullet':
+                doc.fontSize(12).font('Helvetica').text(`• ${block.text}`);
+                doc.moveDown(0.3);
+                break;
+              case 'para':
+                doc.fontSize(12).font(block.bold ? 'Helvetica-Bold' : 'Helvetica').text(block.text);
+                doc.moveDown(0.5);
+                break;
+            }
+          });
+        } catch (error) {
+          console.error('Error parsing markdown for PDF:', error);
+          // Fallback: add content as plain text
+          doc.fontSize(12).font('Helvetica').text(format.content);
         }
-      });
-      const chunks: Buffer[] = [];
-      doc.on('data', (chunk) => chunks.push(chunk));
-      doc.on('end', () => {
-        const buffer = Buffer.concat(chunks);
-        const fileName = `assignment_${format.studentInfo.matric.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-        resolve({ buffer, fileName, mimeType: 'application/pdf' });
-      });
-      // Student Info
-      doc.fontSize(12).font('Helvetica-Bold').text(`Name: ${format.studentInfo.name.toUpperCase()}`, { align: 'left' });
-      doc.font('Helvetica')
-        .text(`Matric Number: ${format.studentInfo.matric}`, { align: 'left' })
-        .text(`Department: ${format.studentInfo.department}`, { align: 'left' })
-        .text(`Course Code: ${format.studentInfo.courseCode}`, { align: 'left' })
-        .text(`Course Title: ${format.studentInfo.courseTitle}`, { align: 'left' })
-        .text(`Lecturer-in-Charge: ${format.studentInfo.lecturerInCharge}`, { align: 'left' });
-      doc.moveDown(1.5);
-      // Question
-      doc.fontSize(14).font('Helvetica-Bold').text(format.question, { align: 'center' });
-      doc.moveDown(1.5);
-      // Parse and render basic markdown
-      const blocks = this.parseBasicMarkdown(format.content);
-      for (const block of blocks) {
-        if (block.type === 'heading') {
-          doc.moveDown(1.0);
-          doc.fontSize(15).font('Helvetica-Bold').text(block.text, { align: 'left' });
-          doc.moveDown(0.5);
-        } else if (block.type === 'subheading') {
-          doc.moveDown(0.7);
-          doc.fontSize(13).font('Helvetica-Bold').text(block.text, { align: 'left' });
-          doc.moveDown(0.3);
-        } else if (block.type === 'subsubheading') {
-          doc.moveDown(0.5);
-          doc.fontSize(12).font('Helvetica-Bold').text(block.text, { align: 'left' });
-          doc.moveDown(0.2);
-        } else if (block.type === 'bullet') {
-          doc.fontSize(11).font('Helvetica').text('• ' + block.text, { align: 'left', indent: 20 });
-          doc.moveDown(0.3);
-        } else if (block.type === 'para' && block.bold) {
-          doc.fontSize(11).font('Helvetica-Bold').text(block.text, { align: 'left' });
-          doc.moveDown(0.5);
-        } else {
-          doc.fontSize(11).font('Helvetica').text(block.text, { align: 'justify' });
-          doc.moveDown(0.7);
-        }
+
+        doc.end();
+      } catch (error) {
+        console.error('Error in generatePdf:', error);
+        reject(error);
       }
-      doc.end();
     });
   }
 
   private async generateTxt(format: DocumentFormat): Promise<{ buffer: Buffer; fileName: string; mimeType: string }> {
-    const content = [
-      `Name: ${format.studentInfo.name}`,
-      `Matric Number: ${format.studentInfo.matric}`,
-      `Department: ${format.studentInfo.department}`,
-      `Course Code: ${format.studentInfo.courseCode}`,
-      `Course Title: ${format.studentInfo.courseTitle}`,
-      `Lecturer-in-Charge: ${format.studentInfo.lecturerInCharge}`,
-      '',
-      format.question,
-      '',
-      format.content
-    ].join('\n');
-    const buffer = Buffer.from(content, 'utf8');
-    const fileName = `assignment_${format.studentInfo.matric.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
-    return {
-      buffer,
-      fileName,
-      mimeType: 'text/plain'
-    };
+    try {
+      const content = [
+        `Name: ${format.studentInfo.name}`,
+        `Matric Number: ${format.studentInfo.matric}`,
+        `Department: ${format.studentInfo.department}`,
+        `Course Code: ${format.studentInfo.courseCode}`,
+        `Course Title: ${format.studentInfo.courseTitle}`,
+        `Lecturer-in-Charge: ${format.studentInfo.lecturerInCharge}`,
+        '',
+        format.question,
+        '',
+        format.content
+      ].join('\n');
+      const buffer = Buffer.from(content, 'utf8');
+      const fileName = `assignment_${format.studentInfo.matric.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
+      return {
+        buffer,
+        fileName,
+        mimeType: 'text/plain'
+      };
+    } catch (err) {
+      console.error('Error in generateTxt:', err);
+      throw err;
+    }
   }
-} 
+}

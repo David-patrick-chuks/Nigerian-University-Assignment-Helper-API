@@ -1,4 +1,7 @@
+import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 import app from './index';
+dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
@@ -26,3 +29,12 @@ process.on('SIGINT', () => {
     process.exit(0);
   });
 });
+
+const MONGO_URI = process.env.MONGO_URI;
+if (MONGO_URI) {
+  mongoose.connect(MONGO_URI)
+    .then(() => console.log('✅ Connected to MongoDB'))
+    .catch((err) => console.error('❌ MongoDB connection error:', err));
+} else {
+  console.warn('⚠️  No MONGO_URI found in environment variables. Skipping MongoDB connection.');
+}

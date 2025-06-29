@@ -61,16 +61,18 @@ export class GeminiService {
 Key Guidelines:
 1. Provide detailed, comprehensive answers that meet the specified page requirements
 2. Use proper academic writing style and formatting
-3. Include relevant examples, citations, and references where appropriate
-4. Structure your response with clear headings, subheadings, and paragraphs
-5. Ensure the content is relevant to Nigerian university standards
-6. Use formal academic language while maintaining clarity
-7. Include introduction, main body, and conclusion sections
-8. Provide practical examples and case studies relevant to the Nigerian context when applicable
-9. DO NOT include any header information like student name, matric number, etc. in your response
-10. Focus only on the academic content of the assignment
+3. Structure your response with clear headings, subheadings, and paragraphs
+4. Ensure the content is relevant to Nigerian university standards
+5. Use formal academic language while maintaining clarity
+6. Include introduction, main body, and conclusion sections
+7. Provide practical examples and case studies relevant to the Nigerian context when applicable
+8. DO NOT include any header information like student name, matric number, etc. in your response
+9. Focus only on the academic content of the assignment
+10. DO NOT include any references, bibliography, citations, or works cited section
+11. DO NOT include any footnotes or endnotes
+12. Write as if this is a standalone academic essay without external citations
 
-Format your response as a complete academic assignment with proper structure and formatting, but without any header information.`;
+Format your response as a complete academic assignment with proper structure and formatting, but without any header information or references.`;
   }
 
   private buildAssignmentPrompt(data: AssignmentRequest): string {
@@ -96,12 +98,15 @@ Please provide a complete, well-structured assignment that:
 1. Directly addresses the question asked
 2. Meets the specified page/word count requirement
 3. Uses proper academic formatting with headings and subheadings
-4. Includes relevant examples and references
+4. Includes relevant examples and case studies
 5. Is suitable for Nigerian university academic standards
 6. Has a clear introduction, well-developed main body, and conclusion
 7. DOES NOT include any header information (name, matric, etc.) - this will be added separately
+8. DOES NOT include any references, bibliography, citations, or works cited section
+9. DOES NOT include any footnotes or endnotes
+10. Write as a standalone academic essay without external citations
 
-Format the response as a complete academic document ready for submission, starting directly with the content.`;
+Format the response as a complete academic document ready for submission, starting directly with the content. Do not include any references or bibliography section.`;
   }
 
   async estimateWordCount(text: string): Promise<number> {

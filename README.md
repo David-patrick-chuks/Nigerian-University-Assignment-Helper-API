@@ -7,8 +7,12 @@ This API helps Nigerian university students generate AI-powered assignment conte
 - Academic formatting (student info, question, content)
 - Multiple file formats: PDF, DOCX, TXT
 - Rate limiting and input validation
-- Supports multi-section (long) assignments by combining multiple AI responses
-- Test script with word count comparison
+- Supports long assignments by splitting into sections and tracking progress
+- **Smart Section Splitting**: Automatically divides long assignments into logical sections (400-600 words each) with descriptive titles
+- **Word Count Optimization**: Automatically expands content if word count is below 90% of target (up to 3 expansion rounds)
+- **Progress Tracking**: Real-time progress updates for long assignments
+- **Page Numbering**: Automatic page numbers in PDF and DOCX formats for professional presentation
+- Test script with word count comparison and expansion tracking
 
 ## Endpoints
 
@@ -18,15 +22,9 @@ This API helps Nigerian university students generate AI-powered assignment conte
 ### API Info
 - `GET /api/info`
 
-### Generate Assignment (File Download)
+### Generate Assignment (Unified, with Job Status)
 - `POST /api/assignments/generate`
-
-### Generate Assignment (JSON)
-- `POST /api/assignments/generate-json`
-
-### Generate Multi-Section Assignment (NEW)
-- `POST /api/assignments/generate-multisection`
-- **Description:** Generate a long assignment by providing an array of section prompts. The API will call Gemini for each section, combine the results, and return a single document.
+- **Description:** Generate an assignment file (doc, docx, pdf, txt). For large assignments (more than 3 pages or 1500 words), the API will process the request as a background job and return a `jobId` immediately. For small assignments, the file is returned directly.
 - **Request Body Example:**
 ```json
 {
@@ -37,32 +35,63 @@ This API helps Nigerian university students generate AI-powered assignment conte
   "courseTitle": "INTERNATIONAL POLITICAL SYSTEM",
   "lecturerInCharge": "PROFESSOR ADEBAYO",
   "fileType": "pdf",
-  "question": "What major political or cultural kingdoms existed in East and Central Africa around 1800 AD, and what roles did they play in regional affairs?",
-  "sections": [
-    { "title": "Introduction", "prompt": "Write a detailed introduction for the assignment topic above." },
-    { "title": "Kingdom of Buganda", "prompt": "Write a detailed section on the Kingdom of Buganda, covering its history, structure, and role around 1800 AD." },
-    { "title": "Kingdom of Bunyoro-Kitara", "prompt": "Write a detailed section on the Kingdom of Bunyoro-Kitara, covering its history, structure, and role around 1800 AD." },
-    { "title": "Conclusion", "prompt": "Write a detailed conclusion for the assignment topic above." }
-  ]
+  "numberOfPages": 10,
+  "question": "What major political or cultural kingdoms existed in East and Central Africa around 1800 AD, and what roles did they play in regional affairs?"
 }
 ```
-- **Response:** Returns the combined assignment as a downloadable file (PDF, DOCX, or TXT).
+- **Response:**
+  - For small assignments: returns the file directly.
+  - For large assignments: returns `{ success: true, jobId }` and processes the job in the background.
+
+### Check Job Status / Download Result
+- `GET /api/jobs/:jobId`
+- **Description:** Poll this endpoint to check the status (`pending`, `in_progress`, `completed`, `failed`) and progress (percentage) of a long-running assignment job. When `completed`, the result includes the file (as base64), file name, and MIME type.
+- **Response Example:**
+```json
+{
+  "success": true,
+  "status": "completed",
+  "progress": 100,
+  "result": {
+    "fileName": "assignment_22_15CA175.pdf",
+    "mimeType": "application/pdf",
+    "buffer": "...base64...",
+    "finalWordCount": 4850,
+    "targetWordCount": 5000,
+    "expansionsUsed": 2
+  }
+}
+```
+
+**Result Fields:**
+- `fileName`: Generated file name
+- `mimeType`: File MIME type
+- `buffer`: File content as base64 string
+- `finalWordCount`: Actual word count of the generated assignment
+- `targetWordCount`: Target word count based on requested pages
+- `expansionsUsed`: Number of expansion rounds used to reach target word count
 
 ## Word Count Logic
 - The API estimates word count and number of pages for each assignment.
-- The test script compares the expected word count (numberOfPages × 500) with the actual word count returned by the API, and warns if the actual is less than expected.
+- For long assignments (>3 pages or >1500 words), the system uses smart section splitting:
+  - **Section Splitting**: Divides content into logical sections of 400-600 words each
+  - **Descriptive Titles**: Uses meaningful section titles (e.g., "Background and Context", "Main Analysis", "Critical Evaluation")
+  - **Automatic Expansion**: If the final word count is below 90% of target, the system automatically generates additional content (up to 3 expansion rounds)
+- The test script compares the expected word count (numberOfPages × 500) with the actual word count returned by the API, and shows expansion information.
 
 ## Test Script
 - Run `node test-api.js` to test the API endpoints.
 - The script saves all responses and files to the `test-output/` folder.
 - It now prints both the expected and actual word count for assignment generation.
+- For large assignments, the script will poll for job status and download the result when ready.
+- **New**: Includes a test for a 10-page assignment to demonstrate section splitting and expansion features.
 
 ## Setup
 1. Clone the repo and install dependencies:
    ```sh
    npm install
    ```
-2. Set up your `.env` file with your Gemini API key and other config.
+2. Set up your `.env` file with your Gemini API key, MongoDB URI, and other config.
 3. Start the server:
    ```sh
    npm run dev
@@ -73,7 +102,7 @@ This API helps Nigerian university students generate AI-powered assignment conte
    ```
 
 ## Notes
-- The Gemini API has a maximum output length per call. For very long assignments, use the multi-section endpoint.
+- The Gemini API has a maximum output length per call. For very long assignments, the backend splits the work into sections and combines the results.
 - Formatting is best-effort and can be customized in the codebase.
 
 ---
