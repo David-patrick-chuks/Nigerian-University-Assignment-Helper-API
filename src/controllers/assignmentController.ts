@@ -188,4 +188,51 @@ export class AssignmentController {
       });
     }
   }
+
+  // Multi-section assignment generation
+  async generateMultiSectionAssignment(req: Request, res: Response): Promise<void> {
+    try {
+      const { sections, ...assignmentData } = req.body;
+      if (!Array.isArray(sections) || sections.length === 0) {
+        res.status(400).json({ success: false, error: 'Sections array is required.' });
+        return;
+      }
+      let combinedContent = '';
+      for (const section of sections) {
+        const sectionPrompt = section.prompt || section;
+        const sectionTitle = section.title || '';
+        const aiResponse = await this.geminiService.generateAssignment({ ...assignmentData, question: sectionPrompt });
+        combinedContent += `\n\n## ${sectionTitle}\n\n${aiResponse}`;
+      }
+      // Prepare document format
+      const documentFormat: DocumentFormat = {
+        studentInfo: {
+          name: assignmentData.name,
+          matric: assignmentData.matric,
+          department: assignmentData.department,
+          courseCode: assignmentData.courseCode,
+          courseTitle: assignmentData.courseTitle,
+          lecturerInCharge: assignmentData.lecturerInCharge
+        },
+        question: assignmentData.question,
+        content: combinedContent
+      };
+      // Generate the document file
+      const documentResult = await this.documentGenerator.generateDocument(
+        documentFormat,
+        assignmentData.fileType
+      );
+      // Set response headers for file download
+      res.setHeader('Content-Type', documentResult.mimeType);
+      res.setHeader('Content-Disposition', `attachment; filename="${documentResult.fileName}"`);
+      res.setHeader('Content-Length', documentResult.buffer.length);
+      // Send the file buffer
+      res.send(documentResult.buffer);
+    } catch (error) {
+      console.error('Error in generateMultiSectionAssignment:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'An unexpected error occurred' });
+      }
+    }
+  }
 } 

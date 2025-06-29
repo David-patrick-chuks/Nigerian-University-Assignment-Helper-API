@@ -61,7 +61,7 @@ async function testAPI() {
       courseCode: "HIS301",
       courseTitle: "INTERNATIONAL POLITICAL SYSTEM",
       lecturerInCharge: "PROFESSOR ADEBAYO",
-      numberOfPages: 6,
+      numberOfPages: 99,
       question: "What major political or cultural kingdoms existed in East and Central Africa around 1800 AD, and what roles did they play in regional affairs?",
       fileType: "pdf"
     };
@@ -84,6 +84,12 @@ async function testAPI() {
       console.log(`📄 Pages: ${jsonResult.data.pages}`);
       console.log(`📝 Word Count: ${jsonResult.data.wordCount}`);
       console.log(`⏰ Timestamp: ${jsonResult.data.timestamp}`);
+      const expectedWordCount = assignmentData.numberOfPages * 500;
+      console.log(`🔢 Expected Word Count: ${expectedWordCount}`);
+      console.log(`🔢 Actual Word Count: ${jsonResult.data.wordCount}`);
+      if (jsonResult.data.wordCount < expectedWordCount) {
+        console.log('⚠️  Actual word count is less than expected!');
+      }
       console.log('\n📖 Assignment Preview (first 200 characters):');
       console.log(jsonResult.data.assignment.substring(0, 200) + '...');
       

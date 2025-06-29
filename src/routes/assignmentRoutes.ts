@@ -30,4 +30,7 @@ router.post(
   assignmentController.generateAssignmentJson.bind(assignmentController)
 );
 
+// Add multi-section route
+router.post('/assignments/generate-multisection', assignmentController.generateMultiSectionAssignment.bind(assignmentController));
+
 export default router; 

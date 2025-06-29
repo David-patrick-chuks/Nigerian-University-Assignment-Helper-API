@@ -1,6 +1,84 @@
 # Nigerian University Assignment Helper API
 
-An AI-powered backend service designed specifically for Nigerian university students to get comprehensive assignment help using Google's Gemini AI.
+This API helps Nigerian university students generate AI-powered assignment content and formatted documents (PDF, DOCX, TXT) using the Gemini API.
+
+## Features
+- AI-powered assignment generation
+- Academic formatting (student info, question, content)
+- Multiple file formats: PDF, DOCX, TXT
+- Rate limiting and input validation
+- Supports multi-section (long) assignments by combining multiple AI responses
+- Test script with word count comparison
+
+## Endpoints
+
+### Health Check
+- `GET /api/health`
+
+### API Info
+- `GET /api/info`
+
+### Generate Assignment (File Download)
+- `POST /api/assignments/generate`
+
+### Generate Assignment (JSON)
+- `POST /api/assignments/generate-json`
+
+### Generate Multi-Section Assignment (NEW)
+- `POST /api/assignments/generate-multisection`
+- **Description:** Generate a long assignment by providing an array of section prompts. The API will call Gemini for each section, combine the results, and return a single document.
+- **Request Body Example:**
+```json
+{
+  "name": "NWAFOR SALOME KACHI",
+  "matric": "22/15CA175",
+  "department": "HISTORY AND INTERNATIONAL STUDIES",
+  "courseCode": "HIS301",
+  "courseTitle": "INTERNATIONAL POLITICAL SYSTEM",
+  "lecturerInCharge": "PROFESSOR ADEBAYO",
+  "fileType": "pdf",
+  "question": "What major political or cultural kingdoms existed in East and Central Africa around 1800 AD, and what roles did they play in regional affairs?",
+  "sections": [
+    { "title": "Introduction", "prompt": "Write a detailed introduction for the assignment topic above." },
+    { "title": "Kingdom of Buganda", "prompt": "Write a detailed section on the Kingdom of Buganda, covering its history, structure, and role around 1800 AD." },
+    { "title": "Kingdom of Bunyoro-Kitara", "prompt": "Write a detailed section on the Kingdom of Bunyoro-Kitara, covering its history, structure, and role around 1800 AD." },
+    { "title": "Conclusion", "prompt": "Write a detailed conclusion for the assignment topic above." }
+  ]
+}
+```
+- **Response:** Returns the combined assignment as a downloadable file (PDF, DOCX, or TXT).
+
+## Word Count Logic
+- The API estimates word count and number of pages for each assignment.
+- The test script compares the expected word count (numberOfPages × 500) with the actual word count returned by the API, and warns if the actual is less than expected.
+
+## Test Script
+- Run `node test-api.js` to test the API endpoints.
+- The script saves all responses and files to the `test-output/` folder.
+- It now prints both the expected and actual word count for assignment generation.
+
+## Setup
+1. Clone the repo and install dependencies:
+   ```sh
+   npm install
+   ```
+2. Set up your `.env` file with your Gemini API key and other config.
+3. Start the server:
+   ```sh
+   npm run dev
+   ```
+4. Run the test script:
+   ```sh
+   node test-api.js
+   ```
+
+## Notes
+- The Gemini API has a maximum output length per call. For very long assignments, use the multi-section endpoint.
+- Formatting is best-effort and can be customized in the codebase.
+
+---
+
+For more details, see the code and comments in each file.
 
 ## 🚀 Features
 

@@ -1,0 +1,29 @@
+{
+  "success": true,
+  "data": {
+    "name": "Nigerian University Assignment Helper API",
+    "version": "1.0.0",
+    "description": "AI-powered assignment help for Nigerian university students",
+    "endpoints": {
+      "POST /api/assignments/generate": "Generate an assignment file (doc, docx, pdf, txt)",
+      "POST /api/assignments/generate-json": "Generate an assignment (JSON response)",
+      "GET /api/health": "Health check",
+      "GET /api/info": "API information"
+    },
+    "features": [
+      "AI-powered assignment generation",
+      "Academic formatting",
+      "Nigerian university standards",
+      "Customizable page requirements",
+      "Multiple file formats (doc, docx, pdf, txt)",
+      "Proper document formatting with student info and question header",
+      "Rate limiting for fair usage"
+    ],
+    "supportedFileTypes": [
+      "doc",
+      "docx",
+      "pdf",
+      "txt"
+    ]
+  }
+}

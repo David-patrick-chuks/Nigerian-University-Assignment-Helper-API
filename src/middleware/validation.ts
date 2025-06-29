@@ -44,8 +44,8 @@ export const validateAssignmentRequest = [
     .withMessage('Lecturer name can only contain letters, spaces, and periods'),
 
   body('numberOfPages')
-    .isInt({ min: 1, max: 50 })
-    .withMessage('Number of pages must be between 1 and 50'),
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Number of pages must be between 1 and 100'),
 
   body('question')
     .trim()

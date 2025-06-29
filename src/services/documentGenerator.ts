@@ -50,6 +50,7 @@ export class DocumentGenerator {
             children: [
               new TextRun({
                 text: `Matric Number: ${format.studentInfo.matric}`,
+                bold: true,
                 size: 24
               })
             ],
@@ -59,6 +60,7 @@ export class DocumentGenerator {
             children: [
               new TextRun({
                 text: `Department: ${format.studentInfo.department}`,
+                bold: true,
                 size: 24
               })
             ],
@@ -68,6 +70,7 @@ export class DocumentGenerator {
             children: [
               new TextRun({
                 text: `Course Code: ${format.studentInfo.courseCode}`,
+                bold: true,
                 size: 24
               })
             ],
@@ -77,6 +80,7 @@ export class DocumentGenerator {
             children: [
               new TextRun({
                 text: `Course Title: ${format.studentInfo.courseTitle}`,
+                bold: true,
                 size: 24
               })
             ],
@@ -86,6 +90,7 @@ export class DocumentGenerator {
             children: [
               new TextRun({
                 text: `Lecturer-in-Charge: ${format.studentInfo.lecturerInCharge}`,
+                bold: true,
                 size: 24
               })
             ],
