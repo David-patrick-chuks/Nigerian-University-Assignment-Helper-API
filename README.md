@@ -1,97 +1,223 @@
 # Nigerian University Assignment Helper API
 
-This API helps Nigerian university students generate AI-powered assignment content and formatted documents (PDF, DOCX, TXT) using the Gemini API.
+This API helps Nigerian university students generate AI-powered assignment content and formatted documents (PDF, DOCX, TXT) using the Gemini API. Includes user authentication, credit system, and multiple AI-powered features.
 
 ## Features
-- AI-powered assignment generation
-- Academic formatting (student info, question, content)
-- Multiple file formats: PDF, DOCX, TXT
-- Rate limiting and input validation
-- Supports long assignments by splitting into sections and tracking progress
-- **Smart Section Splitting**: Automatically divides long assignments into logical sections (400-600 words each) with descriptive titles
-- **Word Count Optimization**: Automatically expands content if word count is below 90% of target (up to 3 expansion rounds)
+- **User Authentication**: Register, login, and Google OAuth integration
+- **Credit System**: Paystack integration for purchasing credits
+- **AI-powered assignment generation** with academic formatting
+- **Multiple AI Features**: Project generation, document summarization, quiz generation, flashcard creation
+- **File Upload Support**: Accept text input or file uploads for all features
+- **Multiple file formats**: PDF, DOCX, TXT
+- **Rate limiting and input validation**
+- **Smart Section Splitting**: Automatically divides long assignments into logical sections
+- **Word Count Optimization**: Automatically expands content if word count is below target
 - **Progress Tracking**: Real-time progress updates for long assignments
-- **Page Numbering**: Automatic page numbers in PDF and DOCX formats for professional presentation
-- Test script with word count comparison and expansion tracking
+- **Page Numbering**: Automatic page numbers in PDF and DOCX formats
 
-## Endpoints
+## API CONTRACT & FRONTEND INTEGRATION
 
-### Health Check
-- `GET /api/health`
+### Base URL
+`http://localhost:3000/api`
 
-### API Info
-- `GET /api/info`
+---
 
-### Generate Assignment (Unified, with Job Status)
-- `POST /api/assignments/generate`
-- **Description:** Generate an assignment file (doc, docx, pdf, txt). For large assignments (more than 3 pages or 1500 words), the API will process the request as a background job and return a `jobId` immediately. For small assignments, the file is returned directly.
-- **Request Body Example:**
-```json
-{
-  "name": "NWAFOR SALOME KACHI",
-  "matric": "22/15CA175",
-  "department": "HISTORY AND INTERNATIONAL STUDIES",
-  "courseCode": "HIS301",
-  "courseTitle": "INTERNATIONAL POLITICAL SYSTEM",
-  "lecturerInCharge": "PROFESSOR ADEBAYO",
-  "fileType": "pdf",
-  "numberOfPages": 10,
-  "question": "What major political or cultural kingdoms existed in East and Central Africa around 1800 AD, and what roles did they play in regional affairs?"
-}
-```
+## 1. Authentication
+
+### Register
+- **POST** `/auth/register`
+- **Body:**
+  ```json
+  { "email": "user@example.com", "password": "password123", "fullName": "John Doe" }
+  ```
 - **Response:**
-  - For small assignments: returns the file directly.
-  - For large assignments: returns `{ success: true, jobId }` and processes the job in the background.
+  ```json
+  { "token": "JWT_TOKEN", "refreshToken": "REFRESH_TOKEN", "user": { "id": "userId", "email": "user@example.com", "fullName": "John Doe", "credits": 10 } }
+  ```
 
-### Check Job Status / Download Result
-- `GET /api/jobs/:jobId`
-- **Description:** Poll this endpoint to check the status (`pending`, `in_progress`, `completed`, `failed`) and progress (percentage) of a long-running assignment job. When `completed`, the result includes the file (as base64), file name, and MIME type.
-- **Response Example:**
-```json
-{
-  "success": true,
-  "status": "completed",
-  "progress": 100,
-  "result": {
-    "fileName": "assignment_22_15CA175.pdf",
-    "mimeType": "application/pdf",
-    "buffer": "...base64...",
-    "finalWordCount": 4850,
-    "targetWordCount": 5000,
-    "expansionsUsed": 2
-  }
-}
+### Login
+- **POST** `/auth/login`
+- **Body:**
+  ```json
+  { "email": "user@example.com", "password": "password123" }
+  ```
+- **Response:**
+  ```json
+  { "token": "JWT_TOKEN", "refreshToken": "REFRESH_TOKEN", "user": { "id": "userId", "email": "user@example.com", "fullName": "John Doe", "credits": 42 } }
+  ```
+
+### Google Login
+- **GET** `/auth/google`
+- **Description:** Initiates Google OAuth flow
+- **Response:** Redirects to Google OAuth consent screen
+
+### Google Callback
+- **GET** `/auth/google/callback`
+- **Description:** Google OAuth callback endpoint
+- **Response:** Redirects to dashboard with tokens
+
+### Refresh Token
+- **POST** `/auth/refresh`
+- **Headers:** `Authorization: Bearer OLD_JWT_TOKEN`
+- **Response:**
+  ```json
+  { "token": "NEW_JWT_TOKEN" }
+  ```
+
+---
+
+## 2. Credit System (Paystack)
+
+### Get Balance
+- **GET** `/credits/balance`
+- **Headers:** `Authorization: Bearer JWT_TOKEN`
+- **Response:**
+  ```json
+  { "credits": 42 }
+  ```
+
+### Buy Credits (initiate Paystack payment)
+- **POST** `/credits/buy`
+- **Headers:** `Authorization: Bearer JWT_TOKEN`
+- **Body:**
+  ```json
+  { "amount": 1000 }
+  ```
+- **Response:**
+  ```json
+  { "paymentUrl": "https://paystack.com/pay/xyz123" }
+  ```
+
+### Verify Payment
+- **GET** `/credits/verify?reference=PAYSTACK_REF`
+- **Headers:** `Authorization: Bearer JWT_TOKEN`
+- **Response:**
+  ```json
+  { "success": true, "creditsAdded": 100, "newBalance": 142 }
+  ```
+
+---
+
+## 3. Feature Endpoints
+
+All require `Authorization: Bearer JWT_TOKEN`.
+
+### Assignment Solution Generator
+- **POST** `/assignment/solve`
+- **Body:**
+  - Text: `{ "question": "Explain the process of photosynthesis." }`
+  - File: `multipart/form-data` with file field `file`
+- **Response:**
+  ```json
+  { "solution": "Photosynthesis is the process by which green plants..." }
+  ```
+
+### Final Year Project Generator (5 credits)
+- **POST** `/project/generate`
+- **Body:**
+  - Text: `{ "topic": "Design and Implementation of a Library Management System" }`
+  - File: `multipart/form-data` with file field `file`
+- **Response:**
+  ```json
+  { "project": "Chapter 1: Introduction..." }
+  ```
+
+### Document Summarizer (2 credits)
+- **POST** `/summarize`
+- **Body:**
+  - Text: `{ "content": "Long document text here..." }`
+  - File: `multipart/form-data` with file field `file`
+- **Response:**
+  ```json
+  { "summary": "This document discusses..." }
+  ```
+
+### Quiz & MCQ Generator (3 credits)
+- **POST** `/quiz/generate`
+- **Body:**
+  - Text: `{ "content": "Text to generate quiz from..." }`
+  - File: `multipart/form-data` with file field `file`
+- **Response:**
+  ```json
+  { "quiz": [ { "question": "What is photosynthesis?", "options": ["A", "B", "C", "D"], "answer": "A" } ] }
+  ```
+
+### Flashcard Generator (2 credits)
+- **POST** `/flashcards/generate`
+- **Body:**
+  - Text: `{ "content": "Text to generate flashcards from..." }`
+  - File: `multipart/form-data` with file field `file`
+- **Response:**
+  ```json
+  { "flashcards": [ { "front": "What is photosynthesis?", "back": "Process by which plants..." } ] }
+  ```
+
+---
+
+## 4. File Upload Notes
+- Use `multipart/form-data` for file uploads.
+- Field name for file: `file`
+- Supported formats: PDF, DOC, DOCX, TXT
+- Maximum file size: 10MB
+- Text and file are mutually exclusive in each request.
+
+---
+
+## 5. Token Usage
+- All endpoints (except register/login/google) require `Authorization: Bearer JWT_TOKEN` in headers.
+- Use `/auth/refresh` to get a new token if expired.
+
+---
+
+## 6. Example Frontend Usage (React Native + Axios)
+
+### Axios Setup
+```ts
+import axios from 'axios';
+const api = axios.create({ baseURL: 'http://localhost:3000/api' });
+export const setAuthToken = (token: string | null) => {
+  if (token) api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  else delete api.defaults.headers.common['Authorization'];
+};
+export default api;
 ```
 
-**Result Fields:**
-- `fileName`: Generated file name
-- `mimeType`: File MIME type
-- `buffer`: File content as base64 string
-- `finalWordCount`: Actual word count of the generated assignment
-- `targetWordCount`: Target word count based on requested pages
-- `expansionsUsed`: Number of expansion rounds used to reach target word count
+### Auth Example
+```ts
+import { register, login } from './hooks/useAuthApi';
+const res = await register('email', 'password', 'Full Name');
+// res.token, res.user
+```
 
-## Word Count Logic
-- The API estimates word count and number of pages for each assignment.
-- For long assignments (>3 pages or >1500 words), the system uses smart section splitting:
-  - **Section Splitting**: Divides content into logical sections of 400-600 words each
-  - **Descriptive Titles**: Uses meaningful section titles (e.g., "Background and Context", "Main Analysis", "Critical Evaluation")
-  - **Automatic Expansion**: If the final word count is below 90% of target, the system automatically generates additional content (up to 3 expansion rounds)
-- The test script compares the expected word count (numberOfPages × 500) with the actual word count returned by the API, and shows expansion information.
+### Credits Example
+```ts
+import { getCredits, buyCredits, verifyPayment } from './hooks/useCreditsApi';
+const balance = await getCredits();
+const { paymentUrl } = await buyCredits(1000); // Naira
+const verify = await verifyPayment('paystack_ref');
+```
 
-## Test Script
-- Run `node test-api.js` to test the API endpoints.
-- The script saves all responses and files to the `test-output/` folder.
-- It now prints both the expected and actual word count for assignment generation.
-- For large assignments, the script will poll for job status and download the result when ready.
-- **New**: Includes a test for a 10-page assignment to demonstrate section splitting and expansion features.
+### Feature Example (Text)
+```ts
+import { solveAssignment } from './hooks/useFeatureApi';
+const res = await solveAssignment({ question: 'Explain photosynthesis' });
+```
+
+### Feature Example (File Upload)
+```ts
+import { solveAssignment } from './hooks/useFeatureApi';
+const file = { uri, name, type }; // from DocumentPicker or ImagePicker
+const res = await solveAssignment({ file });
+```
+
+---
 
 ## Setup
 1. Clone the repo and install dependencies:
    ```sh
    npm install
    ```
-2. Set up your `.env` file with your Gemini API key, MongoDB URI, and other config.
+2. Set up your `.env` file with all required environment variables (see .env.example)
 3. Start the server:
    ```sh
    npm run dev
@@ -101,9 +227,26 @@ This API helps Nigerian university students generate AI-powered assignment conte
    node test-api.js
    ```
 
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `GEMINI_API_KEY` | Google Gemini API key | Yes |
+| `MONGO_URI` | MongoDB connection string | Yes |
+| `JWT_ACCESS_SECRET` | JWT access token secret | Yes |
+| `JWT_REFRESH_SECRET` | JWT refresh token secret | Yes |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID | Yes |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | Yes |
+| `GOOGLE_CALLBACK_URL` | Google OAuth callback URL | Yes |
+| `PAYSTACK_SECRET_KEY` | Paystack secret key | Yes |
+| `PORT` | Server port | No (default: 3000) |
+| `NODE_ENV` | Environment mode | No (default: development) |
+
 ## Notes
 - The Gemini API has a maximum output length per call. For very long assignments, the backend splits the work into sections and combines the results.
-- Formatting is best-effort and can be customized in the codebase.
+- All feature endpoints deduct credits from the user's account.
+- Google OAuth flow redirects to dashboard with tokens for web applications.
+- File uploads are stored in memory and processed immediately.
 
 ---
 

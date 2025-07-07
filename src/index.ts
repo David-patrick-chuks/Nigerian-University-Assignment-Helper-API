@@ -6,8 +6,16 @@ dotenv.config();
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import passport from 'passport';
+import './middleware/auth';
 import { generalRateLimiter } from './middleware/rateLimiter';
 import assignmentRoutes from './routes/assignmentRoutes';
+import authRoutes from './routes/authRoutes';
+import creditsRoutes from './routes/creditsRoutes';
+import flashcardRoutes from './routes/flashcardRoutes';
+import projectRoutes from './routes/projectRoutes';
+import quizRoutes from './routes/quizRoutes';
+import summarizeRoutes from './routes/summarizeRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -41,8 +49,54 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(passport.initialize());
+
 // API routes
-app.use('/api', assignmentRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/credits', creditsRoutes);
+app.use('/api/project', projectRoutes);
+app.use('/api/summarize', summarizeRoutes);
+app.use('/api/quiz', quizRoutes);
+app.use('/api/flashcards', flashcardRoutes);
+app.use('/api/assignments', assignmentRoutes);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Assignment Helper API is running',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  });
+});
+
+// API information endpoint
+app.get('/api/info', (req, res) => {
+  res.status(200).json({
+    success: true,
+    data: {
+      name: 'Nigerian University Assignment Helper API',
+      version: '1.0.0',
+      description: 'AI-powered assignment help for Nigerian university students',
+      endpoints: {
+        'POST /api/assignments/generate': 'Generate an assignment file (doc, docx, pdf, txt)',
+        'POST /api/assignments/generate-json': 'Generate an assignment (JSON response)',
+        'GET /api/health': 'Health check',
+        'GET /api/info': 'API information'
+      },
+      features: [
+        'AI-powered assignment generation',
+        'Academic formatting',
+        'Nigerian university standards',
+        'Customizable page requirements',
+        'Multiple file formats (doc, docx, pdf, txt)',
+        'Proper document formatting with student info and question header',
+        'Rate limiting for fair usage'
+      ],
+      supportedFileTypes: ['doc', 'docx', 'pdf', 'txt']
+    }
+  });
+});
 
 // Root endpoint
 app.get('/', (req, res) => {

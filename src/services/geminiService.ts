@@ -55,6 +55,30 @@ export class GeminiService {
     }
   }
 
+  async generateContent(prompt: string): Promise<string> {
+    try {
+      const chat = this.ai.chats.create({
+        model: this.model,
+      });
+
+      const stream = await chat.sendMessageStream({
+        message: prompt,
+      });
+
+      let fullResponse = '';
+      for await (const chunk of stream) {
+        if (chunk.text) {
+          fullResponse += chunk.text;
+        }
+      }
+
+      return fullResponse;
+    } catch (error) {
+      console.error('Error generating content:', error);
+      throw new Error('Failed to generate content. Please try again.');
+    }
+  }
+
   private buildSystemPrompt(): string {
     return `You are an expert academic assistant for Nigerian university students. Your role is to help students with their assignments by providing comprehensive, well-structured, and academically sound responses.
 
@@ -117,4 +141,15 @@ Format the response as a complete academic document ready for submission, starti
     const wordCount = await this.estimateWordCount(text);
     return Math.ceil(wordCount / 500); // Approximately 500 words per A4 page
   }
+}
+
+// Standalone function for easy importing
+export async function generateContent(prompt: string): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is not configured');
+  }
+  
+  const geminiService = new GeminiService(apiKey);
+  return geminiService.generateContent(prompt);
 } 
