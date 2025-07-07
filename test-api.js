@@ -92,7 +92,7 @@ async function testAPI() {
       fileType: "pdf"
     };
 
-    // Save the request data
+    // Save the request datas
     await saveJsonResponse(assignmentData, 'assignment-request.json', outputDir);
 
     const jsonResponse = await fetch(`${API_BASE_URL}/assignments/generate-json`, {
